@@ -2,340 +2,205 @@ from munkres import Munkres
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
+# from DataGenerator import  gen_data
+from MultiEvoMunkres import MultiEvoMunkres, MultiRandMunkres
+from YaoEvo import YaoEvo
+from SimulatedAnnealing import MultiAnneal, ScalarMultiAnneal
+from ModMunkres import ModMunkres
 
 
-def gen_resumes(n_res, n_skills, n_filters, skill_dist, filter_dist):
-    resumes = [None]*n_res
-    skills_mu = np.random.normal(skill_dist['mu']['mu'], skill_dist['mu']['sigma'], n_skills)
-    filters_mu = np.random.normal(filter_dist['mu']['mu'], filter_dist['mu']['sigma'], n_filters)
-    skills_sigma = np.random.normal(skill_dist['sigma']['mu'], skill_dist['sigma']['sigma'], n_skills)
-    filters_sigma = np.random.normal(filter_dist['sigma']['mu'], filter_dist['sigma']['sigma'], n_filters)
-    avg_n_skills=0
-    avg_n_filters=0
-    for i in range(n_res):
-        resumes[i] = {'skills':np.zeros(0),'filters':np.zeros(0),'salary':0}
-        while not np.any(resumes[i]['skills']):
-            resumes[i]['skills'] = np.greater([np.random.normal(m,s) for m,s in zip(skills_mu,skills_sigma)],0.5)
-        while not np.any(resumes[i]['filters']):
-            resumes[i]['filters'] = np.greater([np.random.normal(m,s) for m,s in zip(filters_mu,filters_sigma)],0.5)
-        avg_n_skills += np.sum(resumes[i]['skills'])
-        avg_n_filters += np.sum(resumes[i]['filters'])
-    avg_n_skills /= n_res
-    avg_n_filters /= n_res
-    print('{} skills and {} filters on average'.format(avg_n_skills,avg_n_filters))
-    return resumes
-
-def gen_jobs(n_jobs, n_skills, n_filters, skill_dist, filter_dist):
-    jobs = [None]*n_jobs
-    skills_mu = np.random.normal(skill_dist['mu']['mu'],skill_dist['mu']['sigma'],n_skills)
-    filters_mu = np.random.normal(filter_dist['mu']['mu'],filter_dist['mu']['sigma'],n_filters)
-    skills_sigma = np.random.normal(skill_dist['sigma']['mu'],skill_dist['sigma']['sigma'],n_skills)
-    filters_sigma = np.random.normal(filter_dist['sigma']['mu'],filter_dist['sigma']['sigma'],n_filters)
-    avg_n_skills=0
-    avg_n_filters=0
-    for i in range(n_jobs):
-        jobs[i] = {'skills':np.zeros(0),'filters':np.zeros(0),'salary':0, 'fee':0}
-        while not np.any(jobs[i]['skills']):
-            jobs[i]['skills'] = np.greater([np.random.normal(m,s) for m,s in zip(skills_mu,skills_sigma)],0.5)
-        while not np.any(jobs[i]['filters']):
-            jobs[i]['filters'] = np.greater([np.random.normal(m,s) for m,s in zip(filters_mu,filters_sigma)],0.5)
-        avg_n_skills += np.sum(jobs[i]['skills'])
-        avg_n_filters += np.sum(jobs[i]['filters'])
-    avg_n_skills /= n_jobs
-    avg_n_filters /= n_jobs
-    print('{} skills and {} filters on average'.format(avg_n_skills,avg_n_filters))
-    return jobs
-
-def gen_salaries(jobs,resumes,n_skills,skill_value_dist,salary_var_dist,fees,fee_freq):
-    skill_rates = np.random.normal(skill_value_dist['mu'],skill_value_dist['sigma'],n_skills)
-    for i in range(len(resumes)):
-        salary = np.sum(np.multiply(resumes[i]['skills'],skill_rates))
-        salary *= np.random.normal(salary_var_dist['mu'],salary_var_dist['sigma'])
-        resumes[i]['salary'] = salary
-
-    for i in range(len(jobs)):
-        salary = np.sum(np.multiply(jobs[i]['skills'],skill_rates))
-        salary *= np.random.normal(salary_var_dist['mu'],salary_var_dist['sigma'])
-        jobs[i]['salary'] = salary
-        jobs[i]['fee'] = np.random.choice(fees,p=fee_freq)
-    return jobs, resumes
-
-
-def jaccard(a,b):
-    n = np.sum(np.minimum(a,b))
-    d = np.sum(np.maximum(a,b))
-    return n/d
-
-
-def calculate_weights(jobs,resumes):
-    n_jobs = len(jobs)
-    n_res = len(resumes)
-    fitness = np.zeros((n_jobs,n_res))
-    value = np.zeros((n_jobs,n_res))
-    salaries = np.zeros((n_jobs,n_res))
-    print('Calculating weights')
-    pass_count = 0
-    total_count = 0
-    for j, job in enumerate(jobs):
-        # if not j%20:
-        #     print('{} jobs complete'.format(j))
-        j_filters = np.where(job['filters'])
-        for r,res in enumerate(resumes):
-            total_count += 1
-            filter_pass = np.all(res['filters'][j_filters])
-            if filter_pass:
-                fitness[j,r] = jaccard(job['skills'],res['skills'])
-                salaries[j,r] = (job['salary']+res['salary'])/2
-                value[j,r] = job['fee']*(job['salary']+res['salary'])/2
-                pass_count += 1
-            else:
-                fitness[j,r] = 0
-                value[j,r] = 0
-    print('Pass rate: {}/{} or {}'.format(pass_count,total_count,pass_count/total_count))
-    return fitness, value, salaries
-
-
-
-
-def gen_data():
-    n_jobs = 100
-    n_res = 100
-
-    n_skills = 256
-    n_filters = 10
-
-    skill_dist = {
-        'mu': {
-            'mu': 0.4,
-            'sigma': 0.12
-        },
-        'sigma': {
-            'mu': 0.15,
-            'sigma': 0.03
-        }
-    }
-
-    job_skill_dist = {
-        'mu': {
-            'mu': 0.5,
-            'sigma': 0.1
-        },
-        'sigma': {
-            'mu': 0.15,
-            'sigma': 0.03
-        }
-    }
-
-    filter_dist = {
-        'mu': {
-            'mu': 0.8,
-            'sigma': 0.12
-        },
-        'sigma': {
-            'mu': 0.12,
-            'sigma': 0.02
-        }
-    }
-
-    job_filter_dist = {
-        'mu': {
-            'mu': 0.5,
-            'sigma': 0.08
-        },
-        'sigma': {
-            'mu': 0.12,
-            'sigma': 0.02
-        }
-    }
-
-    skill_value_dist = {
-        'mu': 1,
-        'sigma': 1
-    }
-
-    salary_var_dist = {
-        'mu': 1,
-        'sigma': 0.05
-    }
-
-    fees = [0.1, 0.125, 0.15, 0.175, 0.2]
-    fee_freq = [0.3, 0.35, 0.2, 0.05, 0.1]
-
-
-    resumes = gen_resumes(n_res, n_skills, n_filters, skill_dist, filter_dist)
-    jobs = gen_jobs(n_jobs, n_skills, n_filters, job_skill_dist, job_filter_dist)
-    jobs,resumes = gen_salaries(jobs,resumes,n_skills,skill_value_dist,salary_var_dist,fees,fee_freq)
-
-    fitness, value, salaries  = calculate_weights(jobs,resumes)
-
-    return fitness, value, salaries
-
-def find_and_eval_matching(weights1,weights2=None):
+def find_matching(weights1):
+    nweights1 = np.max(weights1) - weights1
     m = Munkres()
-    matching = m.compute(np.copy(weights1))
-    matching_weight1 = []
-    matching_weight2 = []
+    matching = m.compute(np.copy(nweights1))
     match_mat = np.zeros_like(weights1, dtype=bool)
     for j, r in matching:
-        matching_weight1.append(weights1[j, r])
-        if weights2 is not None:
-            matching_weight2.append(weights2[j, r])
         match_mat[j, r] = 1
-    if weights2 is None:
-        return matching, matching_weight1, match_mat
-    else:
-        return matching, matching_weight1, matching_weight2, match_mat
+    return match_mat
 
-def multi_obj_munkres(weights1,weights2,n=np.inf):
-    weights1 = np.copy(weights1)
-    weights2 = np.copy(weights2)
-    weights2[weights2==1] = 0
-    weights2 = 1-weights2
-    w1_hist = []
-    w2_hist = []
-    iw1_hist = []
-    iw2_hist = []
-    e = 0
-    n = np.minimum(n,np.minimum(weights1.shape[0],weights1.shape[1])-2)
-    while e < n:
-        matching, matching_weight1, matching_weight2, match_mat = find_and_eval_matching(np.copy(weights1),np.copy(weights2))
-        w1_sum = np.sum(matching_weight1)
-        w2_sum = np.sum(matching_weight2)
-        # _, imatching_weight1, imatching_weight2, imatch_mat = find_and_eval_matching(np.copy(weights2),np.copy(weights1))
-        # iw1_sum = np.sum(imatching_weight1)
-        # iw2_sum = np.sum(imatching_weight2)
-        iw1_sum = 0
-        iw2_sum = 0
-        w1_hist.append(w1_sum)
-        w2_hist.append(w2_sum)
-        # iw1_hist.append(iw1_sum)
-        # iw2_hist.append(iw2_sum)
-        print('W1: {}, W2: {}, iW1: {}, iW2: {}'.format(w1_sum,w2_sum,iw1_sum,iw2_sum))
-        # common_match = np.logical_and(match_mat,imatch_mat)
-        pt_found = False
-        if False:#np.any(common_match):
-            print('PT A')
-            common_match_pts= np.where(common_match)
-            for pi,pj in zip(*common_match_pts):
-                if np.sum(weights1[pi, :]) < weights1.shape[1] - 1 and np.sum(weights1[:, pj]) < weights1.shape[0] - 1:
-                    weights1[pi, pj] = 1
-                    weights2[pi, pj] = 1
-                    pt_found = True
-        if not pt_found:
-            print('PT B')
-            flat_match = match_mat.flatten()
-            match_mat_idx = np.where(match_mat)
-            match_points = weights2.flatten()[flat_match]
-            match_points_sorted_idxs = np.argsort(match_points)
+def compare_pareto_space(*weights):
+    _, _, rand_hist = MultiRandMunkres(*weights, generations=300, population_size=30,birthrate=30.0, keep_top_num=10, m_rate=0.05)
+    _, _, evo_hist = MultiEvoMunkres(*weights,generations=300,population_size=30,birthrate=40.0,keep_top_num=3,m_rate=0.05)
+    _, _, yao_hist = YaoEvo(*weights,generations=300,population_size=30)
+    _, _, anneal_hist = MultiAnneal(*weights,population_size=30,t0=100, tr=0.003,m_rate=0.15)
+    _, _, munkres_A_hist = ModMunkres(*weights)
+    _, _, munkres_B_hist = ModMunkres(*weights[::-1])
 
-            p = 0
-            while not pt_found and p < len(match_points_sorted_idxs):
-                rem_pt = match_points_sorted_idxs[p]
-                pi = match_mat_idx[0][rem_pt]
-                pj = match_mat_idx[1][rem_pt]
-                if np.sum(weights1[pi,:]) < weights1.shape[1]-1 and np.sum(weights1[:,pj]) < weights1.shape[0]-1:
-                    weights1[pi,pj] = 1
-                    weights2[pi,pj] = 1
-
-                    if p > 10:
-                        pt_found = True
-                p += 1
-            if not pt_found:
-                break
-        e += 1
-
-    return matching, w1_hist, w2_hist, iw1_hist, iw2_hist
+    rand_hist = [(x,y) for a in rand_hist for x,y in zip(*a)]
+    evo_hist = [(x,y) for a in evo_hist for x,y in zip(*a)]
+    yao_hist = [(x,y) for a in yao_hist for x,y in zip(*a)]
+    anneal_hist = [(x,y) for a in anneal_hist for x,y in zip(*a)]
+    vanneal_hist = [(x,y) for a in vanneal_hist for x,y in zip(*a)]
 
 
-def val2std(mat):
-    smat = np.zeros_like(mat)
-    for i in range(mat.shape[0]):
-        for j in range(mat.shape[1]):
-            d = mat[i,:].tolist() + mat[:,j].tolist()
-            del d[j]
-            m = np.mean(d)
-            s = np.std(d)
-            smat[i,j] = (mat[i,j]-m)/s
-    return smat
+
+    rand_hist = list(map(list,zip(*rand_hist)))
+
+    evo_hist = list(map(list,zip(*evo_hist)))
+
+    yao_hist = list(map(list,zip(*yao_hist)))
+
+    anneal_hist = list(map(list,zip(*anneal_hist)))
+    vanneal_hist = list(map(list,zip(*vanneal_hist)))
+
+    munkres_A_hist = list(map(list,zip(*munkres_A_hist)))
+    munkres_B_hist = list(map(list,zip(*munkres_B_hist)))
+    munkres_B_hist = munkres_B_hist[::-1]
+
+    plt.plot(*anneal_hist, 'k.')
+    plt.plot(*vanneal_hist, 'm.')
+    plt.plot(*rand_hist, 'r.')
+    plt.plot(*evo_hist, 'b.')
+    plt.plot(*yao_hist, 'g.')
+    plt.plot(*munkres_A_hist, 'c.')
+    plt.plot(*munkres_B_hist, 'y.')
+
+    plt.xlabel('Fitness Function 1')
+    plt.ylabel('Fitness Function 2')
+    plt.legend(['Scalar Annealing','Vector Annealing', 'Random','Evolutionary 1', 'Evolutionary 2', 'Modified Munkres A','Modified Munkres B'])
+    plt.title('Fitness Space')
+    plt.show()
 
 
-def multi_obj_munkres2(weights1,weights2):
-    weights1 = np.copy(weights1)
-    weights2 = np.copy(weights2)
-    sw1 = val2std(weights1)
-    sw2 = val2std(weights2)
+def compare_iterations(*weights):
+    _, rand_hist, _ = MultiRandMunkres(*weights, generations=625, population_size=30, birthrate=30.0, keep_top_num=10,
+                                       m_rate=0.05)
+    _, evo_hist, _ = MultiEvoMunkres(*weights, generations=625, population_size=30, birthrate=40.0, keep_top_num=3,
+                                     m_rate=0.05)
+    _, yao_hist, _ = YaoEvo(*weights, generations=625, population_size=30)
+    _, vanneal_hist, _ = MultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
+    _, anneal_hist, _ = ScalarMultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
+    _, munkres_A_hist, _ = ModMunkres(*weights)
+    _, munkres_B_hist, _ = ModMunkres(*weights[::-1])
 
-    print(np.max(sw1))
-    print(np.min(sw1))
-    print(np.max(sw2))
-    print(np.min(sw2))
-
-    avg_sw1 = sw1 > -0.5
-    high_sw2 = sw2 > -0.5
-
-    remove_pts = np.logical_and(avg_sw1, high_sw2)
-    print('removing {} edges'.format(np.sum(remove_pts)))
-
-    matching, matching_weight1, matching_weight2, match_mat = find_and_eval_matching(np.copy(weights1),np.copy(weights2))
-    ow1_sum = np.sum(matching_weight1)
-    ow2_sum = np.sum(matching_weight2)
-    print('Origional: w1: {},  w2: {}'.format(ow1_sum, ow2_sum))
-
-    remove_pts = np.logical_and(avg_sw1, high_sw2)
-    print('removing {} common edges'.format(np.sum(np.logical_and(remove_pts,match_mat))))
-
-
-    weights1[remove_pts] = 1
-    weights2[remove_pts] = 1
-
-    matching, matching_weight1, matching_weight2, match_mat = find_and_eval_matching(np.copy(weights1),np.copy(weights2))
-    w1_sum = np.sum(matching_weight1)
-    w2_sum = np.sum(matching_weight2)
+    # hists = [rand_hist,evo_hist]
+    hists = [rand_hist,evo_hist,yao_hist,anneal_hist, vanneal_hist]
+    colors = ['r','b','g','k','m']
+    labels = ['Random','Evolutionary 1', 'Evolutionary 2', 'Scalar Annealing','Vector Annealing']
+    for i,(f1,f2) in enumerate(hists):
+        f11, f12 = list(map(list,zip(*f1)))
+        f21, f22 = list(map(list,zip(*f2)))
+        x = list(range(len(f11)))
+        plt.plot(x,f11,colors[i]+'-',label=labels[i])
+        plt.plot(x,f12,colors[i]+'--',label=None)
+        plt.plot(x,f22,colors[i]+'-.',label=None)
+        plt.plot(x,f22,colors[i]+':',label=None)
+    f1, f2 = munkres_A_hist
+    x = list(range(len(f1)))
+    plt.plot(x,f1,'c-',label='Modified Munkres A')
+    plt.plot(x,f2,'c--', label=None)
+    f1, f2 = munkres_B_hist
+    plt.plot(x,f1,'y-',label='Modified Munkres B')
+    plt.plot(x,f2,'y--',label=None)
+    plt.title('Fitness over Time')
+    plt.xlabel('Iterations')
+    plt.ylabel('Fitness')
+    plt.legend()
+    plt.show()
 
 
-    print('New: w1: {},  w2: {}'.format(w1_sum,w2_sum))
+def pcompare(args):
+    weights, fname = args
+    if fname == 'MRM':
+        return MultiRandMunkres(*weights, generations=625, population_size=30, birthrate=30.0, keep_top_num=10,m_rate=0.05)
+    elif fname == 'MEM':
+        return MultiEvoMunkres(*weights, generations=625, population_size=30, birthrate=40.0, keep_top_num=3,m_rate=0.05)
+    elif fname == 'YE':
+        return YaoEvo(*weights, generations=625, population_size=30)
+    elif fname == 'MA':
+        return MultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
+    elif fname == 'SMA':
+        return ScalarMultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
+    elif fname == 'MM':
+        return ModMunkres(*weights)
 
-    return matching
 
+def compare(*weights):
+
+    fnames = ['MRM','MEM','YE','SMA','MA','MM']
+    args = [(weights,fname) for fname in fnames]
+    args.append((weights[::-1],'MM'))
+    # p = Pool()
+    # [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
+    #  [_, anneal_hist, anneal_hist1],[_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = data = p.map(pcompare,args)
+
+    # pickle.dump(data,open('output.pckl', 'wb'))
+    [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1], [_, yao_hist, yao_hist1], [_, vanneal_hist, vanneal_hist1],
+     [_, anneal_hist, anneal_hist1], [_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = pickle.load(open('output.pckl','rb'))
+
+    print(len(rand_hist),len(anneal_hist))
+    print(len(rand_hist[0]),len(anneal_hist[0]))
+    print(len(rand_hist[0][0]),len(anneal_hist[0][0]))
+    print(rand_hist[0][0],anneal_hist[0][0])
+
+# hists = [rand_hist,evo_hist]
+    hists = [rand_hist, evo_hist, yao_hist, anneal_hist, vanneal_hist]
+    labels = ['Random', 'Evolutionary 1','Evolutionary 2', 'Scalar Annealing', 'Vector Annealing']
+    colors = ['r', 'b','g', 'k', 'm']
+    for i, (f1, f2) in enumerate(hists):
+        f11, f12 = list(map(list, zip(*f1)))
+        f21, f22 = list(map(list, zip(*f2)))
+        x = list(range(len(f11)))
+        plt.plot(x, f11, colors[i] + '-', label=labels[i])
+        plt.plot(x, f12, colors[i] + '--', label=None)
+        plt.plot(x, f21, colors[i] + '-.', label=None)
+        plt.plot(x, f22, colors[i] + ':', label=None)
+    f1, f2 = munkres_A_hist
+    x = list(range(len(f1)))
+    plt.plot(x, f1, 'c-', label='Modified Munkres A')
+    plt.plot(x, f2, 'c--', label=None)
+    f1, f2 = munkres_B_hist
+    plt.plot(x, f1, 'y-', label='Modified Munkres B')
+    plt.plot(x, f2, 'y--', label=None)
+    plt.title('Fitness over Time')
+    plt.xlabel('Iterations')
+    plt.ylabel('Fitness')
+    plt.legend()
+
+    plt.figure()
+    rand_hist = [(x, y) for a in rand_hist1 for x, y in zip(*a)]
+    evo_hist = [(x, y) for a in evo_hist1 for x, y in zip(*a)]
+    yao_hist = [(x, y) for a in yao_hist1 for x, y in zip(*a)]
+    anneal_hist = [(x, y) for a in anneal_hist1 for x, y in zip(*a)]
+    vanneal_hist = [(x, y) for a in vanneal_hist1 for x, y in zip(*a)]
+
+    rand_hist = list(map(list, zip(*rand_hist)))
+
+    evo_hist = list(map(list, zip(*evo_hist)))
+
+    yao_hist = list(map(list, zip(*yao_hist)))
+
+    anneal_hist = list(map(list, zip(*anneal_hist)))
+    vanneal_hist = list(map(list, zip(*vanneal_hist)))
+
+    munkres_A_hist = list(map(list, zip(*munkres_A_hist1)))
+    munkres_B_hist = list(map(list, zip(*munkres_B_hist1)))
+    munkres_B_hist = munkres_B_hist[::-1]
+    mx = 15
+    plt.plot(*rand_hist, 'r.', markersize=mx)
+    plt.plot(*vanneal_hist, 'm.', markersize=mx)
+    plt.plot(*anneal_hist, 'k.',markersize=mx)
+
+
+    plt.plot(*evo_hist, 'b.',markersize=mx)
+    plt.plot(*yao_hist, 'g.',markersize=mx)
+    plt.plot(*munkres_A_hist, 'c.',markersize=mx)
+    plt.plot(*munkres_B_hist, 'y.',markersize=mx)
+
+    plt.xlabel('Fitness Function 1')
+    plt.ylabel('Fitness Function 2')
+    plt.legend(
+        ['Random', 'Vector Annealing','Scalar Annealing', 'Evolutionary 1', 'Evolutionary 2', 'Modified Munkres A',
+         'Modified Munkres B'])
+    plt.title('Fitness Space')
+    plt.show()
 
 if __name__ =='__main__':
     np.random.seed(11111)
-    fitness,value,salaries = gen_data()
-    print('Plotting')
-    print('Fitness: Min: {}, Max: {}, Mean: {}'.format(np.min(fitness),np.max(fitness),np.mean(fitness)))
-    print('Value: Min: {}, Max: {}, Mean: {}'.format(np.min(value),np.max(value),np.mean(value)))
-    print('Salary: Min: {}, Max: {}, Mean: {}'.format(np.min(salaries),np.max(salaries),np.mean(salaries)))
-    mf = np.max(fitness)
-    print(mf)
-    print(sum(sum(fitness==mf)))
-    disfitness = 1 - fitness/np.max(fitness)
-    print(sum(sum(disfitness == 0)))
-    disvalue = 1 - value/np.max(value)
-
-    # matching = m.compute(disfitness)
-    # # print('Matching computed')
-    # matching_fitness = []
-    # matching_value = []
-    # value_match = np.zeros_like(fitness, dtype=bool)
-    # for j, r in matching:
-    #     matching_fitness.append(fitness[j, r])
-    #     matching_value.append(value[j, r])
-    #     value_match[j, r] = 1
-    #
-    # print('Total Fitness: {},  Total Value: {}'.format(sum(matching_fitness), sum(matching_value)))
-    #
-    # match_same = np.sum(np.logical_and(fitness_match, value_match))
-    # match_diff = np.sum(np.logical_xor(fitness_match, value_match))
-    #
-    # print('{} common matchings, {} different'.format(match_same, match_diff))
-
-    # matching, w1_hist, w2_hist, iw1_hist, iw2_hist = multi_obj_munkres(disfitness, disvalue,n=100)
-    matching = multi_obj_munkres2(disfitness, disvalue)
-
-    # plt.figure()
-    # x = list(range(len(w1_hist)))
-    # plt.plot(x,w1_hist,'g-',x,w2_hist,'r-')
-    # plt.show()
-
+    weights1 = np.random.random((25,25))
+    weights2 = np.random.random((25,25))
+    # compare_pareto_space(weights1,weights2)
+    compare(weights1,weights2)
 
 
