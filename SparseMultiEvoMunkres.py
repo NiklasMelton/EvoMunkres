@@ -213,6 +213,8 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
             no_change_count = [0 for _ in range(nw)]
         for i in range(nw):
             last_fitness[i] = top_indvs[i][i]
+        if all([x > 50 for x in no_change_count]):
+            break
         # print('Mutation Rate: {}'.format(dm_rate))
 
         fitness, population = breed_and_cull(population, fitness, weights, population_size, keep_top_num, birthrate, m_rate)
@@ -280,17 +282,20 @@ def find_matching(weights1):
 if __name__ == '__main__':
     import pickle
     n = 1000
-    weights1 = np.random.random((n,n))
-    weights2 = np.random.random((n,n))
+    # weights1 = np.random.random((n,n))
+
     # weights2 = np.copy(weights1)
-    nweights1 = np.max(weights1)-weights1
-    _,_,oM = find_and_eval_matching(nweights1)
-    pickle.dump({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
+    # nweights1 = np.max(weights1)-weights1
+    # _,_,oM = find_and_eval_matching(nweights1)
+    # pickle.dump({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
     data = pickle.load(open('matching.pckl','rb'))
+    weights2 = np.random.random((n, n))
+
     print(data.keys())
+    oM = data['matching']
     weights1 = data['weights1']
     weights2 = data['weights2']
-    oM = data['matching']
+
     sweights1 = sparse_dict(0,0)
     sweights2 = sparse_dict(0,0)
     OM = sparse_dict(0,0)
