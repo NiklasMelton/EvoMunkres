@@ -4,6 +4,7 @@ from munkres import Munkres
 import matplotlib.pyplot as plt
 import itertools
 
+
 def validate(matching):
     cols = np.sum(matching, 0)
     rows = np.sum(matching, 1)
@@ -44,7 +45,6 @@ def complete_matching(_matching):
         exit()
     return matching
 
-
 def mutate(_matching, p=0.01):
     matching = np.copy(_matching)
     # print('s',matching.shape)
@@ -72,10 +72,8 @@ def pmate(args):
     return mate(*args)
 
 def cross_breed_population(population,fitness1, fitness2,num_to_gen,m_rate=0.01):
-    sf1 = np.sum(fitness1)
-    sf2 = np.sum(fitness2)
-    nfit1 = fitness1/sf1
-    nfit2 = fitness2/sf2
+    nfit1 = fitness1/np.sum(fitness1)
+    nfit2 = fitness2/np.sum(fitness2)
     nfit3 = np.add(fitness1,fitness2)/2
     nfit3 /= np.sum(nfit3)
     idx = list(range(len(population)))
@@ -283,7 +281,7 @@ if __name__ == '__main__':
     optimal2 = evaluate(oM,weights2)
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     # match, history, pop_history = MultiRandMunkres(weights1,weights2,generations=300,population_size=30,birthrate=30.0,keep_top_num=10,m_rate=0.05)
-    match, history, pop_history = MultiEvoMunkres(weights1,weights2,generations=300,population_size=30,birthrate=40.0,keep_top_num=3,m_rate=0.05)
+    match, history, pop_history = MultiEvoMunkres(weights1,weights2,generations=1000,population_size=30,birthrate=40.0,keep_top_num=3,m_rate=0.001)
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     new_optimal1 = evaluate(match[-1],weights1)
     new_optimal2 = evaluate(match[-1],weights2)

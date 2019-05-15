@@ -21,29 +21,55 @@ class sparse_dict():
 
     def __setitem__(self, key, value):
         x,y = key
+        if isinstance(x,slice):
+            if x.start is None:
+                x_start = 0
+            else:
+                x_start = x.start
+            if x.stop is None:
+                x_stop = self.mx
+            else:
+                x_stop = x.stop
+            if x.step is None:
+                x_step = 1
+            else:
+                x_step = x.step
+        if isinstance(y,slice):
+            if y.start is None:
+                y_start = 0
+            else:
+                y_start = y.start
+            if y.stop is None:
+                y_stop = self.my
+            else:
+                y_stop = y.stop
+            if y.step is None:
+                y_step = 1
+            else:
+                y_step = y.step
         if not isinstance(x,slice):
             if not isinstance(y,slice):
                 self.set(x,y,value)
             else:
-                for di, yi in enumerate(range(y.start,min(self.my,y).stop,y.step)):
-                    if isinstance(value, np.array):
+                for di, yi in enumerate(range(y_start,y_stop,y_step)):
+                    if type(value) is np.ndarray:
                         self.set(x,yi,value[di])
                     elif value != 0:
                         self.set(x, yi, value)
                     else:
                         self.rem(x,y)
         elif not isinstance(y,slice):
-            for di, xi in enumerate(range(x.start, min(x.stop,self.mx), x.step)):
-                if isinstance(value, np.array):
+            for di, xi in enumerate(range(x_start, x_stop, x_step)):
+                if type(value) is np.ndarray:
                     self.set(xi,y,value[di])
                 elif value != 0:
                     self.set(xi, y, value)
                 else:
                     self.rem(x, y)
         else:
-            for di, xi in enumerate(range(x.start, min(x.stop, self.mx), x.step)):
-                for dj, yi in enumerate(range(y.start, min(self.my, y).stop, y.step)):
-                    if isinstance(value,np.array):
+            for di, xi in enumerate(range(x_start, x_stop, x_step)):
+                for dj, yi in enumerate(range(y_start,y_stop,y_step)):
+                    if type(value) is np.ndarray:
                         self.set(xi,yi,value[di,dj])
                     elif value != 0:
                         self.set(xi, yi, value)
@@ -51,7 +77,6 @@ class sparse_dict():
                         self.rem(xi,yi)
 
     def __getitem__(self, item):
-        print(type(item),item)
         if isinstance(item,sparse_dict):
             out = []
             for x in item.data:
@@ -163,12 +188,15 @@ class sparse_dict():
                 a[x] = 1
         return a
 
-    def rem(self,x,y):
-        if x in self.data:
-            if y in self.data[x]:
+    def rem(self,x=None,y=None):
+        if x is not None and x in self.data:
+            if y is not None and y in self.data[x]:
                 del self.data[x][y]
-            if not self.data[x]:
+            if not self.data[x] or y is None:
                 del self.data[x]
+        if x is None and y is not None:
+            for xi in self.data:
+                self.rem(xi,y)
 
     def todense(self):
         dense = np.zeros(self.shape)

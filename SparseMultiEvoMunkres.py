@@ -51,9 +51,11 @@ def mutate(_matching, p=0.01):
     n = np.max(matching.shape)
     flips = np.random.random(n) < p
     if matching.shape[0] >= matching.shape[1]:
-        matching[flips,:] = 0
+        for f in flips:
+            matching.rem(x=f,y=None)
     else:
-        matching[:,flips] = 0
+        for f in flips:
+            matching.rem(x=None,y=f)
     return complete_matching(matching)
 
 def mate(A,B,m_rate=0.01):
@@ -134,7 +136,7 @@ def cull(population, fitness, pop_limit):
 
 
 def spawn_gen(pop_size,weights1):
-    population = [complete_matching(np.zeros_like(weights1,dtype=bool)) for _ in range(pop_size)]
+    population = [complete_matching(sparse_dict(*weights1.shape)) for _ in range(pop_size)]
     fitness1 = np.array([evaluate(p,weights1) for p in population])
     return fitness1, population
 
@@ -194,7 +196,7 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
     for gen in range(generations):
         pop_history.append(fitness)
         top_indvs = get_top_individuals(fitness, population)
-        # print('Gen {}, Top: {}'.format(gen, top_indvs))
+        print('Gen {}, Top: {}'.format(gen, top_indvs))
         for i in range(nw):
             history[i].append(top_indvs[i][:nw])
         for i in range(nw):
@@ -204,7 +206,7 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
                 no_change_count[i] =0
                 dm_rate = m_rate
         if np.any(np.greater(no_change_count,2)):
-            dm_rate = min(0.15, dm_rate + 0.005)
+            dm_rate = min(0.15, dm_rate + 0.001)
             no_change_count = [0 for _ in range(nw)]
         for i in range(nw):
             last_fitness[i] = top_indvs[i][i]
@@ -273,10 +275,14 @@ def find_matching(weights1):
     return match_mat
 
 if __name__ == '__main__':
-    weights1 = np.random.random((4,4))
-    weights2 = np.random.random((4,4))
+    import pickle
+    n = 1000
+    weights1 = np.random.random((n,n))
+    weights2 = np.random.random((n,n))
+    # weights2 = np.copy(weights1)
     nweights1 = np.max(weights1)-weights1
     _,_,oM = find_and_eval_matching(nweights1)
+    pickle.dumps({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
     sweights1 = sparse_dict(0,0)
     sweights2 = sparse_dict(0,0)
     OM = sparse_dict(0,0)
@@ -290,7 +296,7 @@ if __name__ == '__main__':
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     print(soptimal1)
     # match, history, pop_history = MultiRandMunkres(weights1,weights2,generations=300,population_size=30,birthrate=30.0,keep_top_num=10,m_rate=0.05)
-    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=300,population_size=30,birthrate=40.0,keep_top_num=3,m_rate=0.05)
+    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=1000,population_size=30,birthrate=40.0,keep_top_num=5,m_rate=0.001)
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     new_optimal1 = evaluate(match[-1],sweights1)
     new_optimal2 = evaluate(match[-1],sweights2)
@@ -316,8 +322,8 @@ if __name__ == '__main__':
     plt.title('Vector Evaluated Genetic Algorithm')
     plt.xlabel('Iterations')
     plt.ylabel('Fitness')
-    plt.show()
-    plt.show()
+    pickle.dumps({'match': match, 'history': history, 'pop_history': pop_history}, open('matching.pckl', 'wb'))
+    plt.savefig('figure_out.png')
 
 
 
