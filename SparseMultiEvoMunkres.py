@@ -113,33 +113,56 @@ def breed_and_evaluate(population, fitness, weights, num_to_gen, m_rate=0.01):
 
 def cull(population, fitness, pop_limit):
     nw = len(fitness)
-    npop_limit = min(len(population),pop_limit)
+    npop_limit = min(len(population), pop_limit)
+    min_fit = [min(x) for x in zip(*fitness)]
     idx = list(range(len(population)))
-    fitness.append([np.mean(x) for x in zip(*fitness)])
-    pop_fit = list(zip(*fitness, population, idx))
-    pop_fits = [None for _ in range(nw+1)]
-    for i in range(nw+1):
-        pop_fit.sort(reverse=True,key=lambda x: x[i])
-        pop_fits[i] = list(pop_fit)
+    pop_fit = list(zip(min_fit,*fitness,population,idx))
     npop_fit = []
     npop_fit_idx = []
+    for i in range(nw):
+        pop_fit.sort(reverse=True,key=lambda x: x[i+1])
+        if pop_fit[0][-1] not in npop_fit_idx:
+            npop_fit_idx.append(pop_fit[0][-1])
+            npop_fit.append(pop_fit[0][:-1])
     i = 0
-    j = 0
+    pop_fit.sort(reverse=True, key=lambda x: x[0])
     while len(npop_fit) < npop_limit:
-        if pop_fits[j][i][-1] not in npop_fit_idx:
-            npop_fit.append(pop_fits[j][i][:-1])
-            npop_fit_idx.append(pop_fits[j][i][-1])
-        j = -1
+        if pop_fit[i][-1] not in npop_fit_idx:
+            npop_fit.append(pop_fit[i][:-1])
+            npop_fit_idx.append(pop_fit[i][-1])
         i += 1
-    *nfitness, npopulation = list(map(list, zip(*npop_fit)))
-    return nfitness[:-1], npopulation
+    _,*nfitness, npopulation = list(map(list, zip(*npop_fit)))
+    return nfitness, npopulation
+
+# def cull(population, fitness, pop_limit):
+#     nw = len(fitness)
+#     npop_limit = min(len(population),pop_limit)
+#     idx = list(range(len(population)))
+#     fitness.append([np.mean(x) for x in zip(*fitness)])
+#     pop_fit = list(zip(*fitness, population, idx))
+#     pop_fits = [None for _ in range(nw+1)]
+#     for i in range(nw+1):
+#         pop_fit.sort(reverse=True,key=lambda x: x[i])
+#         pop_fits[i] = list(pop_fit)
+#     npop_fit = []
+#     npop_fit_idx = []
+#     i = 0
+#     j = -1
+#     while len(npop_fit) < npop_limit:
+#         if pop_fits[j][i][-1] not in npop_fit_idx:
+#             npop_fit.append(pop_fits[j][i][:-1])
+#             npop_fit_idx.append(pop_fits[j][i][-1])
+#         j = -1
+#         i += 1
+#     *nfitness, npopulation = list(map(list, zip(*npop_fit)))
+#     return nfitness[:-1], npopulation
 
 
 def spawn_gen(pop_size,weights1,indv0=None):
     if indv0 is None:
         population = [complete_matching(sparse_dict(*weights1.shape)) for _ in range(pop_size)]
     else:
-        population = [mutate(indv0.copy(),p=0.1) for _ in range(pop_size)]
+        population = [mutate(indv0.copy(),p=0.01) if np.random.rand() > 0.66 else complete_matching(sparse_dict(*weights1.shape)) for _ in range(pop_size)]
     fitness1 = np.array([evaluate(p,weights1) for p in population])
     return fitness1, population
 
@@ -209,7 +232,7 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
                 no_change_count[i] =0
                 dm_rate = m_rate
         if np.any(np.greater(no_change_count,2)):
-            dm_rate = min(0.15, dm_rate + 0.001)
+            dm_rate = min(0.15, dm_rate*1.01)
             no_change_count = [0 for _ in range(nw)]
         for i in range(nw):
             last_fitness[i] = top_indvs[i][i]
@@ -309,7 +332,7 @@ if __name__ == '__main__':
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     print(soptimal1)
     # match, history, pop_history = MultiRandMunkres(weights1,weights2,generations=300,population_size=30,birthrate=30.0,keep_top_num=10,m_rate=0.05)
-    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=1000,population_size=30,birthrate=40.0,keep_top_num=5,m_rate=0.001,indv0=OM)
+    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=1000,population_size=20,birthrate=30.0,keep_top_num=10,m_rate=1e-4,indv0=OM)
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     new_optimal1 = evaluate(match[-1],sweights1)
     new_optimal2 = evaluate(match[-1],sweights2)
