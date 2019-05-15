@@ -280,13 +280,14 @@ def find_matching(weights1):
 if __name__ == '__main__':
     import pickle
     n = 1000
-    # weights1 = np.random.random((n,n))
-    # weights2 = np.random.random((n,n))
+    weights1 = np.random.random((n,n))
+    weights2 = np.random.random((n,n))
     # weights2 = np.copy(weights1)
-    # nweights1 = np.max(weights1)-weights1
-    # _,_,oM = find_and_eval_matching(nweights1)
-    # pickle.dump({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
-    data = pickle.load(open('matching.pckl','wb'))
+    nweights1 = np.max(weights1)-weights1
+    _,_,oM = find_and_eval_matching(nweights1)
+    pickle.dump({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
+    data = pickle.load(open('matching.pckl','rb'))
+    print(data.keys())
     weights1 = data['weights1']
     weights2 = data['weights2']
     oM = data['matching']
@@ -329,7 +330,7 @@ if __name__ == '__main__':
     plt.title('Vector Evaluated Genetic Algorithm')
     plt.xlabel('Iterations')
     plt.ylabel('Fitness')
-    pickle.dump({'match': match, 'history': history, 'pop_history': pop_history}, open('matching.pckl', 'wb'))
+    pickle.dump({'match': match, 'history': history, 'pop_history': pop_history}, open('history.pckl', 'wb'))
     plt.savefig('figure_out.png')
 
 
