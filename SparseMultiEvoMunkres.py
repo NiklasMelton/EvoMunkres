@@ -307,42 +307,28 @@ def find_matching(weights1):
         match_mat[j, r] = 1
     return match_mat
 
-if __name__ == '__main__':
-    import pickle
-    # n = 1000
-    # # weights1 = np.random.random((n,n))
-    #
-    # # weights2 = np.copy(weights1)
-    # # nweights1 = np.max(weights1)-weights1
-    # # _,_,oM = find_and_eval_matching(nweights1)
-    # # pickle.dump({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
-    # data = pickle.load(open('matching.pckl','rb'))
-    # weights2 = np.random.random((n, n))
-    #
-    # print(data.keys())
-    # oM = data['matching']
-    # weights1 = data['weights1']
-    # weights2 = data['weights2']
-    #
-    # sweights1 = sparse_dict(0,0)
-    # sweights2 = sparse_dict(0,0)
-    # OM = sparse_dict(0,0)
-    # sweights1.fromarray(weights1)
-    # sweights2.fromarray(weights2)
-    # OM.fromarray(oM)
-    data = pickle.load(open('sparse_fitness.pckl','rb'))
-    sweights1 = data['fitness']
-    sweights2 = data['value']
-    # soptimal1 = evaluate(oM,weights1)
-    # optimal1 = evaluate(OM,sweights1)
-    # optimal2 = evaluate(OM,sweights2)
+def gen_weights_and_plot(n):
+    weights1 = np.random.random((n, n))
+    weights2 = np.random.random((n, n))
+
+    # weights2 = np.copy(weights1)
+    nweights1 = np.max(weights1) - weights1
+    _, _, oM = find_and_eval_matching(nweights1)
+    weights2 = np.random.random((n, n))
+
+    sweights1 = sparse_dict(0, 0)
+    sweights2 = sparse_dict(0, 0)
+    OM = sparse_dict(0, 0)
+    sweights1.fromarray(weights1)
+    sweights2.fromarray(weights2)
+    OM.fromarray(oM)
+    optimal1 = evaluate(OM, sweights1)
+    optimal2 = evaluate(OM, sweights2)
+    match, history, pop_history = MultiEvoMunkres(sweights1, sweights2, generations=100, population_size=50,
+                                                  birthrate=10.0, keep_top_num=10, m_rate=1e-3)
     # print('Optimal: {}, {}'.format(optimal1, optimal2))
-    # print(soptimal1)
-    # match, history, pop_history = MultiRandMunkres(weights1,weights2,generations=300,population_size=30,birthrate=30.0,keep_top_num=10,m_rate=0.05)
-    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=100,population_size=50,birthrate=10.0,keep_top_num=10,m_rate=1e-3)
-    # print('Optimal: {}, {}'.format(optimal1, optimal2))
-    new_optimal1 = evaluate(match[-1],sweights1)
-    new_optimal2 = evaluate(match[-1],sweights2)
+    new_optimal1 = evaluate(match[-1], sweights1)
+    new_optimal2 = evaluate(match[-1], sweights2)
     # prcnt_f1 = (new_optimal1-optimal1)/optimal1
     # prcnt_f2 = (new_optimal2-optimal2)/optimal2
     print('New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
@@ -362,11 +348,19 @@ if __name__ == '__main__':
     # plt.plot([0, len(h1)], [optimal1, optimal1], 'r--', label='Optimal F1')
     # plt.plot([0, len(h1)], [optimal2, optimal2], 'b--', label='Sub-Optimal F2')
     plt.legend()
-    plt.title('Vector Evaluated Genetic Algorithm')
+    plt.title('Vector Evaluated Genetic Algorithm, {}x{}'.format(n, n))
     plt.xlabel('Iterations')
     plt.ylabel('Fitness')
-    pickle.dump({'match': match, 'history': history, 'pop_history': pop_history}, open('history.pckl', 'wb'))
-    plt.savefig('figure_out.png')
+    # pickle.dump({'match': match, 'history': history, 'pop_history': pop_history}, open('history.pckl', 'wb'))
+    plt.savefig('figure_out_{}x{}.png'.format(n, n))
+
+if __name__ == '__main__':
+    import pickle
+    n = 1000
+    p = Pool()
+    p.map(gen_weights_and_plot,[25,50,100,200,300,500,750,1000])
+
+
 
 
 

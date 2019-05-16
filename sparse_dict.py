@@ -19,6 +19,12 @@ class sparse_dict():
         else:
             self.data[x] = {y:d}
 
+    def get(self,x,y):
+        if x in self.data and y in self.data[x]:
+            return self.data[x][y]
+        else:
+            return 0
+
     def __setitem__(self, key, value):
         x,y = key
         if isinstance(x,slice):
@@ -190,28 +196,50 @@ class sparse_dict():
 
     def argmax(self,axis):
         if axis <= 1:
-            mi = np.zeros(self.my, dtype=np.int16)
             a = np.zeros(self.my, dtype=np.int16)
             for x in self.data:
                 for y in self.data[x]:
-                    if self.data[x][y] > self.data[mi[y]][y]:
-                        mi[y] = x
-            for y in range(self.my):
-                a[y] = self.data[mi[y]][y]
+                    try:
+                        x1 = a[y] not in self.data
+                    except:
+                        print(self.shape)
+                        print(max(self.data.keys()))
+                        print(max(self.data[x].keys()))
+                        m = 0
+                        for xx in self.data:
+                            m1 = max(self.data[xx].keys())
+                            if m1 > m:
+                                m = m1
+                        print(m)
+                        exit()
+                    if not x1:
+                        x2 = y in self.data[a[y]]
+                        if x2:
+                            x3 = self.data[x][y] > self.data[a[y]][y]
+                    if x1 or (x2 and x3):
+                        a[y] = x
         else:
             a = np.zeros(self.mx, dtype=np.int16)
             for x in self.data:
                 mi = 0
                 for y in self.data[x]:
-                    if self.data[x][y] > self.data[x][mi]:
+                    if mi not in self.data[x] or self.data[x][y] > self.data[x][mi]:
                         mi = y
-                a[x] = self.data[x][mi]
+                a[x] = mi
+        return a
 
     def dict_avg(self,B):
         C = self.copy()
+
+        for x in B.data:
+            for y in B.data[x]:
+                if x in C.data and y in C.data[x]:
+                    C.data[x][y] += B.data[x][y]
+                else:
+                    C.set(x,y,B.data[x][y])
         for x in C.data:
             for y in C.data[x]:
-                C.data[x][y] = (C.data[x][y]+B)/2
+                C.data[x][y] /= 2
         return C
 
     def rem(self,x=None,y=None):

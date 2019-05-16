@@ -100,14 +100,14 @@ def bit_mutation(matching):
     m_ = matching.copy()
     for _ in range(nb):
         pts = np.random.choice(np.array(range(n)),2,replace=False)
-        c = [m_[i,pts[0]] for i in range(m_.shape[0])]
-        for i in m_:
-            if pts[0] in m_[i]:
-                v = bool(m_[i][pts[0]])
+        c = {i: m_.get(i,pts[0]) for i in m_.data}
+        for i in m_.data:
+            if pts[0] in m_.data[i]:
+                v = bool(m_.data[i][pts[0]])
             else:
                 v = 0
-            if pts[1] in m_[i]:
-                m_.set(i,pts[0],m_[i][pts[1]])
+            if pts[1] in m_.data[i]:
+                m_.set(i,pts[0],m_.data[i][pts[1]])
                 m_.set(i, pts[1], v)
             m_.set(i,pts[1],c[i])
     return m_
@@ -140,11 +140,7 @@ def selection(base, children, mutated):
 def YaoEvo(*weights_,generations,population_size):
     nw = 2
     w1,w2 = weights_
-    weights1 = sparse_dict(*w1.shape)
-    weights1.fromarray(w1)
-    weights2 = sparse_dict(*w2.shape)
-    weights2.fromarray(w2)
-    weights = weights1.dict_avg(weights2)
+    weights = w1.dict_avg(w2)
     history = [[] for _ in range(nw)]
     pop_history = []
     # step 1
@@ -192,23 +188,23 @@ def find_and_eval_matching(weights1):
     return matching, matching_weight1, match_mat
 
 if __name__ == '__main__':
-    weights1 = np.random.random((25,25))
-    weights2 = np.random.random((25,25))
-    nweights = np.max(weights1)-weights1
-    _,_,oM = find_and_eval_matching(nweights)
-    optimal1 = evaluate(oM,weights1)
-    optimal2 = evaluate(oM,weights2)
-    print('Optimal:',optimal1)
-    match, history, pop_hist = YaoEvo(weights1, weights2,generations=300,population_size=30)
+    import pickle
+    data = pickle.load(open('sparse_fitness.pckl', 'rb'))
+    sweights1 = data['fitness']
+    sweights2 = data['value']
+    OM = data['OM']
+    sweights1.shape = (3728,7255)
+    sweights2.shape = (3728,7255)
+    pickle.dump({'fitness': sweights1, 'value': sweights2, 'OM': OM}, open('sparse_fitness.pckl', 'wb'))
+    print(sweights1.shape,'sw1s')
+    match, history, pop_hist = YaoEvo(sweights1, sweights2,generations=300,population_size=30)
     h1,h2 = history
 
-    print('Optimal: {}, {}'.format(optimal1, optimal2))
-    new_optimal1 = evaluate(match[-1], weights1)
-    new_optimal2 = evaluate(match[-1], weights2)
-    prcnt_f1 = (new_optimal1 - optimal1) / optimal1
-    prcnt_f2 = (new_optimal2 - optimal2) / optimal2
+
+    new_optimal1 = evaluate(match[-1], sweights1)
+    new_optimal2 = evaluate(match[-1], sweights2)
+
     print('New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
-    print('dF1: {}%, dF2: {}%'.format(prcnt_f1, prcnt_f2))
 
 
     h11, h12 = list(map(list, zip(*h1)))
@@ -218,8 +214,6 @@ if __name__ == '__main__':
     plt.plot(x, h12, 'g-.', label='Highest F1, F2')
     plt.plot(x, h21, 'm--', label='Highest F2, F1')
     plt.plot(x, h22, 'm-.', label='Highest F2, F2')
-    plt.plot([0, len(h1)], [optimal1, optimal1], 'r--', label='Optimal F1')
-    plt.plot([0, len(h1)], [optimal2, optimal2], 'b--', label='Sub-Optimal F2')
     plt.legend()
     plt.title('Scalarized Genetic Algorithm, Yao et. al.')
     plt.xlabel('Iterations')
