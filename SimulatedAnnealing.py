@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from munkres import Munkres
+# from sparse_dict import sparse_dict
 
 def evaluate(matching, weights):
     return np.sum(weights[matching])

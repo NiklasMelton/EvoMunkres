@@ -9,10 +9,10 @@ def validate(matching):
     cols = matching.sum(0)
     rows = matching.sum(1)
     # print(cols.shape)
-    n_cols = cols.sum()
-    n_rows = rows.sum()
-    return np.array_equal((n_rows,n_cols),matching.shape)
-
+    n_cols = int(cols.sum())
+    n_rows = int(rows.sum())
+    n = min(matching.shape)
+    return n == n_cols == n_rows
 def common_edges(A,B):
     return A.logical_and(B)
 
@@ -27,9 +27,9 @@ def complete_matching(_matching):
     match_cols = np.random.permutation(n_cols)
     match_rows = np.random.permutation(n_rows)
     if n < n_cols:
-        match_cols = np.choose(match_cols,n)
+        match_cols = np.random.choice(match_cols,n)
     if n < n_rows:
-        match_rows = np.choose(match_rows,n)
+        match_rows = np.random.choice(match_rows,n)
     for ci, col in enumerate(cols):
         if col:
             match_cols[match_cols >= ci] += 1
@@ -98,7 +98,8 @@ def pevaluate(args):
 
 def breed_and_evaluate(population, fitness, weights, num_to_gen, m_rate=0.01):
     nw = len(weights)
-    all_combos = list(itertools.combinations(list(range(nw)), 2))
+    all_combos = [[0,1]]
+    # all_combos = list(itertools.combinations(list(range(nw)), 2))
     num_to_gen_per = int(num_to_gen / (len(all_combos) + nw))
     children = []
     for i,j in all_combos:
@@ -232,7 +233,9 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
                 no_change_count[i] =0
                 dm_rate = m_rate
         if np.any(np.greater(no_change_count,2)):
-            dm_rate = min(0.15, dm_rate*1.1)
+            dm_rate = dm_rate*1.2
+            if dm_rate > 0.15:
+                dm_rate = 0.1*m_rate
             no_change_count = [0 for _ in range(nw)]
         for i in range(nw):
             last_fitness[i] = top_indvs[i][i]
@@ -251,7 +254,7 @@ def get_top_individuals(fitness, population):
     top_indvs = []
     for i in range(nw):
         pop_fit.sort(reverse=True, key=lambda x: x[i])
-        top_indvs.append(pop_fit[i])
+        top_indvs.append(pop_fit[0])
     return top_indvs
 
 
@@ -304,42 +307,44 @@ def find_matching(weights1):
 
 if __name__ == '__main__':
     import pickle
-    n = 1000
-    # weights1 = np.random.random((n,n))
-
-    # weights2 = np.copy(weights1)
-    # nweights1 = np.max(weights1)-weights1
-    # _,_,oM = find_and_eval_matching(nweights1)
-    # pickle.dump({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
-    data = pickle.load(open('matching.pckl','rb'))
-    weights2 = np.random.random((n, n))
-
-    print(data.keys())
-    oM = data['matching']
-    weights1 = data['weights1']
-    weights2 = data['weights2']
-
-    sweights1 = sparse_dict(0,0)
-    sweights2 = sparse_dict(0,0)
-    OM = sparse_dict(0,0)
-    sweights1.fromarray(weights1)
-    sweights2.fromarray(weights2)
-    OM.fromarray(oM)
-
-    soptimal1 = evaluate(oM,weights1)
-    optimal1 = evaluate(OM,sweights1)
-    optimal2 = evaluate(OM,sweights2)
-    print('Optimal: {}, {}'.format(optimal1, optimal2))
-    print(soptimal1)
+    # n = 1000
+    # # weights1 = np.random.random((n,n))
+    #
+    # # weights2 = np.copy(weights1)
+    # # nweights1 = np.max(weights1)-weights1
+    # # _,_,oM = find_and_eval_matching(nweights1)
+    # # pickle.dump({'weights1':weights1,'weights2':weights2,'matching':oM},open('matching.pckl','wb'))
+    # data = pickle.load(open('matching.pckl','rb'))
+    # weights2 = np.random.random((n, n))
+    #
+    # print(data.keys())
+    # oM = data['matching']
+    # weights1 = data['weights1']
+    # weights2 = data['weights2']
+    #
+    # sweights1 = sparse_dict(0,0)
+    # sweights2 = sparse_dict(0,0)
+    # OM = sparse_dict(0,0)
+    # sweights1.fromarray(weights1)
+    # sweights2.fromarray(weights2)
+    # OM.fromarray(oM)
+    data = pickle.load(open('sparse_fitness.pckl','rb'))
+    sweights1 = data['fitness']
+    sweights2 = data['value']
+    # soptimal1 = evaluate(oM,weights1)
+    # optimal1 = evaluate(OM,sweights1)
+    # optimal2 = evaluate(OM,sweights2)
+    # print('Optimal: {}, {}'.format(optimal1, optimal2))
+    # print(soptimal1)
     # match, history, pop_history = MultiRandMunkres(weights1,weights2,generations=300,population_size=30,birthrate=30.0,keep_top_num=10,m_rate=0.05)
-    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=1000,population_size=20,birthrate=30.0,keep_top_num=3,m_rate=1e-4,indv0=OM)
-    print('Optimal: {}, {}'.format(optimal1, optimal2))
+    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=100,population_size=50,birthrate=10.0,keep_top_num=10,m_rate=1e-3)
+    # print('Optimal: {}, {}'.format(optimal1, optimal2))
     new_optimal1 = evaluate(match[-1],sweights1)
     new_optimal2 = evaluate(match[-1],sweights2)
-    prcnt_f1 = (new_optimal1-optimal1)/optimal1
-    prcnt_f2 = (new_optimal2-optimal2)/optimal2
+    # prcnt_f1 = (new_optimal1-optimal1)/optimal1
+    # prcnt_f2 = (new_optimal2-optimal2)/optimal2
     print('New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
-    print('dF1: {}%, dF2: {}%'.format(prcnt_f1,prcnt_f2))
+    # print('dF1: {}%, dF2: {}%'.format(prcnt_f1,prcnt_f2))
 
     print(len(history))
     print(len(history[0]))
@@ -352,8 +357,8 @@ if __name__ == '__main__':
     plt.plot(x, h12, 'g-.', label='Highest F1, F2')
     plt.plot(x, h21, 'm--', label='Highest F2, F1')
     plt.plot(x, h22, 'm-.', label='Highest F2, F2')
-    plt.plot([0, len(h1)], [optimal1, optimal1], 'r--', label='Optimal F1')
-    plt.plot([0, len(h1)], [optimal2, optimal2], 'b--', label='Sub-Optimal F2')
+    # plt.plot([0, len(h1)], [optimal1, optimal1], 'r--', label='Optimal F1')
+    # plt.plot([0, len(h1)], [optimal2, optimal2], 'b--', label='Sub-Optimal F2')
     plt.legend()
     plt.title('Vector Evaluated Genetic Algorithm')
     plt.xlabel('Iterations')
