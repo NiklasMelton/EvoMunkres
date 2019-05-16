@@ -103,15 +103,15 @@ def compare_iterations(*weights):
 def pcompare(args):
     weights, fname = args
     if fname == 'MRM':
-        return MultiRandMunkres(*weights, generations=625, population_size=30, birthrate=30.0, keep_top_num=10,m_rate=0.05)
+        return MultiRandMunkres(*weights, generations=6, population_size=30, birthrate=30.0, keep_top_num=10,m_rate=0.05)
     elif fname == 'MEM':
-        return MultiEvoMunkres(*weights, generations=625, population_size=30, birthrate=40.0, keep_top_num=3,m_rate=0.05)
+        return MultiEvoMunkres(*weights, generations=6, population_size=30, birthrate=40.0, keep_top_num=3,m_rate=0.05)
     elif fname == 'YE':
-        return YaoEvo(*weights, generations=625, population_size=30)
+        return YaoEvo(*weights, generations=6, population_size=30)
     elif fname == 'MA':
-        return MultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
+        return MultiAnneal(*weights, population_size=30, t0=0.1, tr=0.03, m_rate=0.15)
     elif fname == 'SMA':
-        return ScalarMultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
+        return ScalarMultiAnneal(*weights, population_size=30, t0=0.1, tr=0.03, m_rate=0.15)
     # elif fname == 'MM':
     #     return ModMunkres(*weights)
 
