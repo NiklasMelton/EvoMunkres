@@ -222,7 +222,7 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
     for gen in range(generations):
         pop_history.append(fitness)
         top_indvs = get_top_individuals(fitness, population)
-        print('Gen {}, Top: {}'.format(gen, top_indvs))
+        print('Gen {}, Mutation Rate: {}, Top: {} '.format(gen, dm_rate, [x[:-1] for x in top_indvs]))
         for i in range(nw):
             history[i].append(top_indvs[i][:nw])
         for i in range(nw):
@@ -232,9 +232,7 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
                 no_change_count[i] =0
                 dm_rate = m_rate
         if np.any(np.greater(no_change_count,2)):
-
-            dm_rate = min(0.15, dm_rate + 0.005)
-
+            dm_rate = min(0.15, dm_rate*1.1)
             no_change_count = [0 for _ in range(nw)]
         for i in range(nw):
             last_fitness[i] = top_indvs[i][i]
@@ -333,8 +331,8 @@ if __name__ == '__main__':
     optimal2 = evaluate(OM,sweights2)
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     print(soptimal1)
-    # match, history, pop_history = MultiRandMunkres(weights1,weights2,generations=300,population_size=30,birthrate=30.0,keep_top_num=10,m_rate=0.05)
     match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=1000,population_size=10,birthrate=60.0,keep_top_num=10,m_rate=1e-4,indv0=OM)
+
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     new_optimal1 = evaluate(match[-1],sweights1)
     new_optimal2 = evaluate(match[-1],sweights2)
