@@ -331,7 +331,7 @@ def gen_weights_and_plot(n):
     # prcnt_f1 = (new_optimal1-optimal1)/optimal1
     # prcnt_f2 = (new_optimal2-optimal2)/optimal2
     print(n,'New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
-    print(n,'dF1: {}%, dF2: {}%'.format(prcnt_f1,prcnt_f2))
+    # print(n,'dF1: {}%, dF2: {}%'.format(prcnt_f1,prcnt_f2))
 
     h1, h2 = history
     h11, h12 = list(map(list, zip(*h1)))
@@ -354,7 +354,7 @@ if __name__ == '__main__':
     import pickle
     n = 1000
     p = Pool()
-    p.map(gen_weights_and_plot,[25,50,100,200,300,500,750,1000])
+    p.map(gen_weights_and_plot,[100,200,300,500,750,1000])
 
 
 
