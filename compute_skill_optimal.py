@@ -28,7 +28,13 @@ if __name__ == '__main__':
     sweights1 = data['fitness']
     sweights2 = data['value']
     weights1 = sweights1.todense()
+
     nweights1 = np.max(weights1) - weights1
+
+    x,y = nweights1.shape
+    n = max(x,y)
+    nweights1 = np.pad(nweights1,([0,n-x],[0,n-y]),'constant',constant_values=0)
+    print(nweights1.shape)
 
     _,_,oM = find_and_eval_matching(nweights1)
     OM = sparse_dict(0,0)

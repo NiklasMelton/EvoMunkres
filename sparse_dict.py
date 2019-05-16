@@ -188,6 +188,25 @@ class sparse_dict():
                 a[x] = 1
         return a
 
+    def argmax(self,axis):
+        if axis <= 1:
+            mi = np.zeros(self.my, dtype=np.int16)
+            a = np.zeros(self.my, dtype=np.int16)
+            for x in self.data:
+                for y in self.data[x]:
+                    if self.data[x][y] > self.data[mi[y]][y]:
+                        mi[y] = x
+            for y in range(self.my):
+                a[y] = self.data[mi[y]][y]
+        else:
+            a = np.zeros(self.mx, dtype=np.int16)
+            for x in self.data:
+                mi = 0
+                for y in self.data[x]:
+                    if self.data[x][y] > self.data[x][mi]:
+                        mi = y
+                a[x] = self.data[x][mi[y]]
+
     def rem(self,x=None,y=None):
         if x is not None and x in self.data:
             if y is not None and y in self.data[x]:

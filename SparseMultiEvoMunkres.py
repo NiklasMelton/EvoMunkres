@@ -13,6 +13,8 @@ def validate(matching):
     n_rows = int(rows.sum())
     n = min(matching.shape)
     return n == n_cols == n_rows
+
+
 def common_edges(A,B):
     return A.logical_and(B)
 
