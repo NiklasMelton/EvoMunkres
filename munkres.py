@@ -105,10 +105,11 @@ class Munkres:
         sorted_cols = []
         for row in matrix:
             row_len = len(row)
-            new_row = row[:]
+            new_row = list(row[:])
             if total_rows > row_len:
                 # Row too short. Pad it.
-                new_row += [pad_value] * (total_rows - row_len)
+                x= [pad_value] * (total_rows - row_len)
+                new_row += x
             new_matrix += [new_row]
 
         while len(new_matrix) < total_rows:
