@@ -119,7 +119,7 @@ def pcompare(args):
 def compare(*weights):
 
     # fnames = ['MRM','MEM','YE','SMA','MA','MM']
-    fnames = ['MRM','MEM','YE','SMA','MA']
+    fnames = ['MEM','YE','SMA','MA']
     args = [(weights,fname) for fname in fnames]
     # args.append((weights[::-1],'MM'))
     p = Pool()
@@ -127,19 +127,17 @@ def compare(*weights):
     data = [pcompare(a) for a in args]
     # [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
     #  [_, anneal_hist, anneal_hist1],[_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = data = p.map(pcompare,args)
-    [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
+    [[_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
      [_, anneal_hist, anneal_hist1]] = data
     pickle.dump(data,open('sparse_output.pckl', 'wb'))
     # [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1], [_, yao_hist, yao_hist1], [_, vanneal_hist, vanneal_hist1],
     #  [_, anneal_hist, anneal_hist1], [_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = pickle.load(open('output.pckl','rb'))
 
-    print(len(rand_hist),len(anneal_hist))
-    print(len(rand_hist[0]),len(anneal_hist[0]))
-    print(len(rand_hist[0][0]),len(anneal_hist[0][0]))
-    print(rand_hist[0][0],anneal_hist[0][0])
+
 
 # hists = [rand_hist,evo_hist]
-    hists = [rand_hist, evo_hist, yao_hist, anneal_hist, vanneal_hist]
+#     hists = [rand_hist, evo_hist, yao_hist, anneal_hist, vanneal_hist]
+    hists = [evo_hist, yao_hist, anneal_hist, vanneal_hist]
     labels = ['Random', 'Evolutionary 1','Evolutionary 2', 'Scalar Annealing', 'Vector Annealing']
     colors = ['r', 'b','g', 'k', 'm']
     for i, (f1, f2) in enumerate(hists):
@@ -163,13 +161,13 @@ def compare(*weights):
     plt.legend()
 
     plt.figure()
-    rand_hist = [(x, y) for a in rand_hist1 for x, y in zip(*a)]
+    # rand_hist = [(x, y) for a in rand_hist1 for x, y in zip(*a)]
     evo_hist = [(x, y) for a in evo_hist1 for x, y in zip(*a)]
     yao_hist = [(x, y) for a in yao_hist1 for x, y in zip(*a)]
     anneal_hist = [(x, y) for a in anneal_hist1 for x, y in zip(*a)]
     vanneal_hist = [(x, y) for a in vanneal_hist1 for x, y in zip(*a)]
 
-    rand_hist = list(map(list, zip(*rand_hist)))
+    # rand_hist = list(map(list, zip(*rand_hist)))
 
     evo_hist = list(map(list, zip(*evo_hist)))
 
@@ -182,7 +180,7 @@ def compare(*weights):
     # munkres_B_hist = list(map(list, zip(*munkres_B_hist1)))
     # munkres_B_hist = munkres_B_hist[::-1]
     mx = 15
-    plt.plot(*rand_hist, 'r.', markersize=mx)
+    # plt.plot(*rand_hist, 'r.', markersize=mx)
     plt.plot(*vanneal_hist, 'm.', markersize=mx)
     plt.plot(*anneal_hist, 'k.',markersize=mx)
 
@@ -198,15 +196,16 @@ def compare(*weights):
     #     ['Random', 'Vector Annealing','Scalar Annealing', 'Evolutionary 1', 'Evolutionary 2', 'Modified Munkres A',
     #      'Modified Munkres B'])
     plt.legend(
-        ['Random', 'Vector Annealing','Scalar Annealing', 'Evolutionary 1', 'Evolutionary 2'])
+        ['Vector Annealing','Scalar Annealing', 'Evolutionary 1', 'Evolutionary 2'])
     plt.title('Fitness Space')
     plt.show()
 
 if __name__ =='__main__':
     np.random.seed(11111)
-    weights1 = np.random.random((25,25))
-    weights2 = np.random.random((25,25))
+    data = pickle.load(open('sparse_fitness.pckl', 'rb'))
+    sweights1 = data['fitness']
+    sweights2 = data['value']
     # compare_pareto_space(weights1,weights2)
-    compare(weights1,weights2)
+    compare(sweights1,sweights2)
 
 
