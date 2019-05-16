@@ -334,7 +334,7 @@ if __name__ == '__main__':
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     print(soptimal1)
     # match, history, pop_history = MultiRandMunkres(weights1,weights2,generations=300,population_size=30,birthrate=30.0,keep_top_num=10,m_rate=0.05)
-    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=1000,population_size=20,birthrate=30.0,keep_top_num=10,m_rate=1e-4,indv0=OM)
+    match, history, pop_history = MultiEvoMunkres(sweights1,sweights2,generations=1000,population_size=10,birthrate=60.0,keep_top_num=10,m_rate=1e-4,indv0=OM)
     print('Optimal: {}, {}'.format(optimal1, optimal2))
     new_optimal1 = evaluate(match[-1],sweights1)
     new_optimal2 = evaluate(match[-1],sweights2)
