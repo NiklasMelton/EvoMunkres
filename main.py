@@ -123,10 +123,12 @@ def compare(*weights):
     args = [(weights,fname) for fname in fnames]
     # args.append((weights[::-1],'MM'))
     p = Pool()
+    # data = p.map(pcompare,args)
+    data = [pcompare(a) for a in args]
     # [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
     #  [_, anneal_hist, anneal_hist1],[_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = data = p.map(pcompare,args)
     [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
-     [_, anneal_hist, anneal_hist1]] = data = p.map(pcompare,args)
+     [_, anneal_hist, anneal_hist1]] = data
     pickle.dump(data,open('sparse_output.pckl', 'wb'))
     # [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1], [_, yao_hist, yao_hist1], [_, vanneal_hist, vanneal_hist1],
     #  [_, anneal_hist, anneal_hist1], [_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = pickle.load(open('output.pckl','rb'))
