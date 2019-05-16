@@ -205,7 +205,14 @@ class sparse_dict():
                 for y in self.data[x]:
                     if self.data[x][y] > self.data[x][mi]:
                         mi = y
-                a[x] = self.data[x][mi[y]]
+                a[x] = self.data[x][mi]
+
+    def dict_avg(self,B):
+        C = self.copy()
+        for x in C.data:
+            for y in C.data[x]:
+                C[x][y] = (C[x][y]+B)/2
+        return C
 
     def rem(self,x=None,y=None):
         if x is not None and x in self.data:

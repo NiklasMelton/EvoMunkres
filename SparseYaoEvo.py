@@ -138,10 +138,12 @@ def selection(base, children, mutated):
     return next_gen_fitness, next_gen_population
 
 def YaoEvo(*weights_,generations,population_size):
-    nw = len(weights_)
-    weights = np.zeros_like(weights_[0])
-    for i in range(1,nw): weights += weights_[i]
-    weights /= nw
+    w1,w2 = weights_
+    weights1 = sparse_dict(*w1.shape)
+    weights1.fromarray(w1)
+    weights2 = sparse_dict(*w2.shape)
+    weights2.fromarray(w2)
+    weights = weights1.dict_avg(weights2)
     history = [[] for _ in range(nw)]
     pop_history = []
     # step 1

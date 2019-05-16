@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 # from DataGenerator import  gen_data
-from MultiEvoMunkres import MultiEvoMunkres, MultiRandMunkres
-from YaoEvo import YaoEvo
-from SimulatedAnnealing import MultiAnneal, ScalarMultiAnneal
+from SparseMultiEvoMunkres import MultiEvoMunkres, MultiRandMunkres
+from SparseYaoEvo import YaoEvo
+from SparseSimulatedAnnealing import MultiAnneal, ScalarMultiAnneal
 from ModMunkres import ModMunkres
 
 
@@ -112,22 +112,24 @@ def pcompare(args):
         return MultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
     elif fname == 'SMA':
         return ScalarMultiAnneal(*weights, population_size=30, t0=10000, tr=0.03, m_rate=0.15)
-    elif fname == 'MM':
-        return ModMunkres(*weights)
+    # elif fname == 'MM':
+    #     return ModMunkres(*weights)
 
 
 def compare(*weights):
 
-    fnames = ['MRM','MEM','YE','SMA','MA','MM']
+    # fnames = ['MRM','MEM','YE','SMA','MA','MM']
+    fnames = ['MRM','MEM','YE','SMA','MA']
     args = [(weights,fname) for fname in fnames]
-    args.append((weights[::-1],'MM'))
-    # p = Pool()
+    # args.append((weights[::-1],'MM'))
+    p = Pool()
     # [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
     #  [_, anneal_hist, anneal_hist1],[_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = data = p.map(pcompare,args)
-
-    # pickle.dump(data,open('output.pckl', 'wb'))
-    [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1], [_, yao_hist, yao_hist1], [_, vanneal_hist, vanneal_hist1],
-     [_, anneal_hist, anneal_hist1], [_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = pickle.load(open('output.pckl','rb'))
+    [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1],[_, yao_hist, yao_hist1],[_, vanneal_hist, vanneal_hist1],
+     [_, anneal_hist, anneal_hist1]] = data = p.map(pcompare,args)
+    pickle.dump(data,open('sparse_output.pckl', 'wb'))
+    # [[_, rand_hist, rand_hist1], [_, evo_hist, evo_hist1], [_, yao_hist, yao_hist1], [_, vanneal_hist, vanneal_hist1],
+    #  [_, anneal_hist, anneal_hist1], [_, munkres_A_hist, munkres_A_hist1], [_, munkres_B_hist, munkres_B_hist1]] = pickle.load(open('output.pckl','rb'))
 
     print(len(rand_hist),len(anneal_hist))
     print(len(rand_hist[0]),len(anneal_hist[0]))
@@ -146,13 +148,13 @@ def compare(*weights):
         plt.plot(x, f12, colors[i] + '--', label=None)
         plt.plot(x, f21, colors[i] + '-.', label=None)
         plt.plot(x, f22, colors[i] + ':', label=None)
-    f1, f2 = munkres_A_hist
-    x = list(range(len(f1)))
-    plt.plot(x, f1, 'c-', label='Modified Munkres A')
-    plt.plot(x, f2, 'c--', label=None)
-    f1, f2 = munkres_B_hist
-    plt.plot(x, f1, 'y-', label='Modified Munkres B')
-    plt.plot(x, f2, 'y--', label=None)
+    # f1, f2 = munkres_A_hist
+    # x = list(range(len(f1)))
+    # plt.plot(x, f1, 'c-', label='Modified Munkres A')
+    # plt.plot(x, f2, 'c--', label=None)
+    # f1, f2 = munkres_B_hist
+    # plt.plot(x, f1, 'y-', label='Modified Munkres B')
+    # plt.plot(x, f2, 'y--', label=None)
     plt.title('Fitness over Time')
     plt.xlabel('Iterations')
     plt.ylabel('Fitness')
@@ -174,9 +176,9 @@ def compare(*weights):
     anneal_hist = list(map(list, zip(*anneal_hist)))
     vanneal_hist = list(map(list, zip(*vanneal_hist)))
 
-    munkres_A_hist = list(map(list, zip(*munkres_A_hist1)))
-    munkres_B_hist = list(map(list, zip(*munkres_B_hist1)))
-    munkres_B_hist = munkres_B_hist[::-1]
+    # munkres_A_hist = list(map(list, zip(*munkres_A_hist1)))
+    # munkres_B_hist = list(map(list, zip(*munkres_B_hist1)))
+    # munkres_B_hist = munkres_B_hist[::-1]
     mx = 15
     plt.plot(*rand_hist, 'r.', markersize=mx)
     plt.plot(*vanneal_hist, 'm.', markersize=mx)
@@ -185,14 +187,16 @@ def compare(*weights):
 
     plt.plot(*evo_hist, 'b.',markersize=mx)
     plt.plot(*yao_hist, 'g.',markersize=mx)
-    plt.plot(*munkres_A_hist, 'c.',markersize=mx)
-    plt.plot(*munkres_B_hist, 'y.',markersize=mx)
+    # plt.plot(*munkres_A_hist, 'c.',markersize=mx)
+    # plt.plot(*munkres_B_hist, 'y.',markersize=mx)
 
     plt.xlabel('Fitness Function 1')
     plt.ylabel('Fitness Function 2')
+    # plt.legend(
+    #     ['Random', 'Vector Annealing','Scalar Annealing', 'Evolutionary 1', 'Evolutionary 2', 'Modified Munkres A',
+    #      'Modified Munkres B'])
     plt.legend(
-        ['Random', 'Vector Annealing','Scalar Annealing', 'Evolutionary 1', 'Evolutionary 2', 'Modified Munkres A',
-         'Modified Munkres B'])
+        ['Random', 'Vector Annealing','Scalar Annealing', 'Evolutionary 1', 'Evolutionary 2'])
     plt.title('Fitness Space')
     plt.show()
 
