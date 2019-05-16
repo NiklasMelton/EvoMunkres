@@ -138,6 +138,7 @@ def selection(base, children, mutated):
     return next_gen_fitness, next_gen_population
 
 def YaoEvo(*weights_,generations,population_size):
+    nw = 2
     w1,w2 = weights_
     weights1 = sparse_dict(*w1.shape)
     weights1.fromarray(w1)

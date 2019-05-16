@@ -211,7 +211,7 @@ class sparse_dict():
         C = self.copy()
         for x in C.data:
             for y in C.data[x]:
-                C[x][y] = (C[x][y]+B)/2
+                C.data[x][y] = (C.data[x][y]+B)/2
         return C
 
     def rem(self,x=None,y=None):
