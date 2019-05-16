@@ -325,17 +325,14 @@ def gen_weights_and_plot(n):
     optimal1 = evaluate(OM, sweights1)
     optimal2 = evaluate(OM, sweights2)
     match, history, pop_history = MultiEvoMunkres(sweights1, sweights2, generations=600, population_size=30, birthrate=40.0, keep_top_num=3,m_rate=0.05)
-    # print('Optimal: {}, {}'.format(optimal1, optimal2))
+    print(n,'Optimal: {}, {}'.format(optimal1, optimal2))
     new_optimal1 = evaluate(match[-1], sweights1)
     new_optimal2 = evaluate(match[-1], sweights2)
     # prcnt_f1 = (new_optimal1-optimal1)/optimal1
     # prcnt_f2 = (new_optimal2-optimal2)/optimal2
-    print('New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
-    # print('dF1: {}%, dF2: {}%'.format(prcnt_f1,prcnt_f2))
+    print(n,'New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
+    print(n,'dF1: {}%, dF2: {}%'.format(prcnt_f1,prcnt_f2))
 
-    print(len(history))
-    print(len(history[0]))
-    print(len(history[0][0]))
     h1, h2 = history
     h11, h12 = list(map(list, zip(*h1)))
     h21, h22 = list(map(list, zip(*h2)))
@@ -344,8 +341,8 @@ def gen_weights_and_plot(n):
     plt.plot(x, h12, 'g-.', label='Highest F1, F2')
     plt.plot(x, h21, 'm--', label='Highest F2, F1')
     plt.plot(x, h22, 'm-.', label='Highest F2, F2')
-    # plt.plot([0, len(h1)], [optimal1, optimal1], 'r--', label='Optimal F1')
-    # plt.plot([0, len(h1)], [optimal2, optimal2], 'b--', label='Sub-Optimal F2')
+    plt.plot([0, len(h1)], [optimal1, optimal1], 'r--', label='Optimal F1')
+    plt.plot([0, len(h1)], [optimal2, optimal2], 'b--', label='Sub-Optimal F2')
     plt.legend()
     plt.title('Vector Evaluated Genetic Algorithm, {}x{}'.format(n, n))
     plt.xlabel('Iterations')
