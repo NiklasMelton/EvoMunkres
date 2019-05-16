@@ -193,11 +193,11 @@ if __name__ == '__main__':
     sweights1 = data['fitness']
     sweights2 = data['value']
     OM = data['OM']
-    sweights1.shape = (3728,7255)
-    sweights2.shape = (3728,7255)
-    pickle.dump({'fitness': sweights1, 'value': sweights2, 'OM': OM}, open('sparse_fitness.pckl', 'wb'))
+    # sweights1.shape = (3728,7255)
+    # sweights2.shape = (3728,7255)
+    # pickle.dump({'fitness': sweights1, 'value': sweights2, 'OM': OM}, open('sparse_fitness.pckl', 'wb'))
     print(sweights1.shape,'sw1s')
-    match, history, pop_hist = YaoEvo(sweights1, sweights2,generations=300,population_size=30)
+    match, history, pop_hist = YaoEvo(sweights1, sweights2,generations=1000,population_size=30)
     h1,h2 = history
 
 

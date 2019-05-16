@@ -249,7 +249,7 @@ class sparse_dict():
             if not self.data[x] or y is None:
                 del self.data[x]
         if x is None and y is not None:
-            for xi in self.data:
+            for xi in list(self.data.keys()):
                 self.rem(xi,y)
 
     def todense(self):
