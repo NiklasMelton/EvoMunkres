@@ -52,12 +52,15 @@ def mutate(_matching, p=0.01):
     # print('s',matching.shape)
     n = np.max(matching.shape)
     flips = np.random.random(n) < p
+    # print('Mutating: {}/{}'.format(sum(flips),n))
     if matching.shape[0] >= matching.shape[1]:
-        for f in flips:
-            matching.rem(x=f,y=None)
+        for i,f in enumerate(flips):
+            if f:
+                matching.rem(x=i,y=None)
     else:
-        for f in flips:
-            matching.rem(x=None,y=f)
+        for i,f in enumerate(flips):
+            if f:
+                matching.rem(x=None,y=i)
     return complete_matching(matching)
 
 def mate(A,B,m_rate=0.01):
@@ -225,7 +228,7 @@ def MultiEvoMunkres(*weights,generations,population_size,birthrate=2.0,keep_top_
     for gen in range(generations):
         pop_history.append(fitness)
         top_indvs = get_top_individuals(fitness, population)
-        # print('Gen {}, Mutation Rate: {}, Top: {} '.format(gen, dm_rate, [x[:-1] for x in top_indvs]))
+        print('Gen {}, Mutation Rate: {}, Top: {} '.format(gen, dm_rate, [x[:-1] for x in top_indvs]))
         for i in range(nw):
             history[i].append(top_indvs[i][:nw])
         for i in range(nw):
@@ -329,15 +332,9 @@ def gen_weights_and_plot(n=None,get_opt=True):
         OM.fromarray(oM)
         optimal1 = evaluate(OM, sweights1)
         optimal2 = evaluate(OM, sweights2)
-    match, history, pop_history = MultiEvoMunkres(sweights1, sweights2, generations=600, population_size=30, birthrate=40.0, keep_top_num=3,m_rate=0.05)
+    match, history, pop_history = MultiEvoMunkres(sweights1, sweights2, generations=600, population_size=30, birthrate=40.0, keep_top_num=3,m_rate=0.001)
     new_optimal1 = evaluate(match[-1], sweights1)
     new_optimal2 = evaluate(match[-1], sweights2)
-<<<<<<< HEAD
-    # prcnt_f1 = (new_optimal1-optimal1)/optimal1
-    # prcnt_f2 = (new_optimal2-optimal2)/optimal2
-    print(n,'New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
-    # print(n,'dF1: {}%, dF2: {}%'.format(prcnt_f1,prcnt_f2))
-=======
     print(n, 'New Optimal: {}, {}'.format(new_optimal1, new_optimal2))
     if get_opt:
         print(n,'Old Optimal: {}, {}'.format(optimal1, optimal2))
@@ -345,8 +342,6 @@ def gen_weights_and_plot(n=None,get_opt=True):
         prcnt_f2 = (new_optimal2-optimal2)/optimal2
         print(n, 'dF1: {}%, dF2: {}%'.format(prcnt_f1, prcnt_f2))
 
-
->>>>>>> 107caa0de61d7104d91745b506e5fc4c468a4b01
 
     h1, h2 = history
     h11, h12 = list(map(list, zip(*h1)))

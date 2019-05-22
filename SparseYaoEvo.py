@@ -51,6 +51,17 @@ def evaluate(matching, weights):
     return weights[matching].sum()
 
 def single_point_crossover(A,B):
+    print(type(A))
+    for cp in [A,B]:
+        my = 0
+        for x in cp.data:
+            m = max(cp.data[x].keys())
+            my = max(my, m)
+        if my > cp.my:
+            print('Ay', my, cp.my)
+            exit()
+
+
     A = A.tolist()
     B = B.tolist()
     pt = np.random.randint(0,len(A))
@@ -67,11 +78,22 @@ def single_point_crossover(A,B):
         a2[ai] = a_pt
     A_ = a1 + b2
     B_ = b1 + a2
+    for cp in [A_,B_]:
+        my = 0
+        for x in cp.data:
+            m = max(cp.data[x].keys())
+            my = max(my, m)
+        if my > cp.my:
+            print('Ay', my, cp.my)
+            exit()
     return A_, B_
 
 def single_point_breeding(population, weights):
     idx_axis = np.array(list(range(weights.shape[0])))
-    idx_chromos = [p.argmax(axis=1) for p in population]
+    idx_chromos = []
+    for p in population:
+        idx_chromos.append(p.argmax(axis=1))
+    # idx_chromos = [p.argmax(axis=1) for p in population]
 
     n = len(population)
     parent_pairs = [(idx_chromos[i], idx_chromos[j]) for i in range(n-1) for j in range(i+1,n)]
@@ -137,6 +159,16 @@ def selection(base, children, mutated):
     next_gen_fitness, next_gen_population = list(map(list, zip(*next_gen)))
     return next_gen_fitness, next_gen_population
 
+def get_top_individuals(fitness, population):
+    nw = len(fitness)
+    pop_fit = list(zip(*fitness, population))
+    top_indvs = []
+    for i in range(nw):
+        pop_fit.sort(reverse=True, key=lambda x: x[i])
+        top_indvs.append(pop_fit[0])
+    return top_indvs
+
+
 def YaoEvo(*weights_,generations,population_size):
     nw = 2
     w1,w2 = weights_
@@ -150,20 +182,24 @@ def YaoEvo(*weights_,generations,population_size):
         fitness_[i] = [evaluate(p, weights_[i]) for p in population]
     for gen in range(generations):
         pop_fit = list(zip(*fitness_, population))
-        top_indvs = []
-        pop_fit.sort(reverse=True, key=lambda x: np.mean(x[:nw]))
-        top_indvs.append(pop_fit[0])
-        pop_history.append(fitness_)
+        top_indvs = get_top_individuals(fitness_,population)
+        print('Gen {},Top: {} '.format(gen, [x[:-1] for x in top_indvs]))
         for i in range(nw):
-            pop_fit.sort(reverse=True, key=lambda x: x[i])
-            top_indvs.append(pop_fit[0])
-
-        for i in range(nw):
-            history[i].append(top_indvs[1+i][:nw])
+            history[i].append(top_indvs[i][:nw])
 
         child_fitness, child_population = single_point_breeding(population, weights)
         mutated_population = [bit_mutation(m) for m in population]
         mutated_fitness = [evaluate(m,weights) for m in mutated_population]
+
+
+        for cp in mutated_population:
+            my = 0
+            for x in cp.data:
+                m = max(cp.data[x].keys())
+                my = max(my, m)
+            if my > cp.my:
+                print('My', my, cp.my)
+                exit()
 
         fitness, population = selection((fitness,population),(child_fitness, child_population), (mutated_fitness, mutated_population))
         for i in range(nw):
@@ -197,7 +233,7 @@ if __name__ == '__main__':
     # sweights2.shape = (3728,7255)
     # pickle.dump({'fitness': sweights1, 'value': sweights2, 'OM': OM}, open('sparse_fitness.pckl', 'wb'))
     print(sweights1.shape,'sw1s')
-    match, history, pop_hist = YaoEvo(sweights1, sweights2,generations=1000,population_size=30)
+    match, history, pop_hist = YaoEvo(sweights1, sweights2,generations=600,population_size=30)
     h1,h2 = history
 
 

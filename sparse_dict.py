@@ -196,36 +196,25 @@ class sparse_dict():
 
     def argmax(self,axis):
         if axis <= 1:
+            # exit()
             a = np.zeros(self.my, dtype=np.int16)
             for x in self.data:
                 for y in self.data[x]:
                     try:
-                        x1 = a[y] not in self.data
-                    except:
-                        print(self.shape)
-                        print(max(self.data.keys()))
-                        print(max(self.data[x].keys()))
-                        m = 0
-                        for xx in self.data:
-                            m1 = max(self.data[xx].keys())
-                            if m1 > m:
-                                m = m1
-                        print(m)
+                        if a[y] not in self.data or (y in self.data[a[y]] and self.data[x][y] > self.data[a[y]][y]):
+                            a[y] = x
+                    except Exception as E:
+                        print(y, x, self.my)
+                        print(a[y])
+                        print(E)
                         exit()
-                    if not x1:
-                        x2 = y in self.data[a[y]]
-                        if x2:
-                            x3 = self.data[x][y] > self.data[a[y]][y]
-                    if x1 or (x2 and x3):
-                        a[y] = x
         else:
             a = np.zeros(self.mx, dtype=np.int16)
             for x in self.data:
-                mi = 0
+                a[x] = 0
                 for y in self.data[x]:
-                    if mi not in self.data[x] or self.data[x][y] > self.data[x][mi]:
-                        mi = y
-                a[x] = mi
+                    if a[x] not in self.data[x] or self.data[x][y] > self.data[x][a[x]]:
+                        a[x] = y
         return a
 
     def dict_avg(self,B):
